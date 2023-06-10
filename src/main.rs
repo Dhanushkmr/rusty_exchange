@@ -1,98 +1,34 @@
-use std::{collections::HashMap, hash::Hash};
+mod matching_engine;
+use matching_engine::orderbook::{Order, OrderType, Orderbook};
+use matching_engine::engine::{TradingPair, MatchingEngine};
 
-#[derive(Debug)]
-enum OrderType {
-    Bid,
-    Ask,
-}
-#[derive(Debug)]
-struct Orderbook {
-    asks: HashMap<Price, Limit>,
-    bids: HashMap<Price, Limit>,
-}
-impl Orderbook {
-    fn new() -> Orderbook {
-        Orderbook {
-            asks: HashMap::new(),
-            bids: HashMap::new(),
-        }
-    }
-
-    fn add_order(&mut self, price: f64, order: Order) {
-        match order.order_type  {
-            OrderType::Bid => {
-                let price = Price::new(price);
-                match self.bids.get_mut(&price) {
-                    Some(limit) => limit.add_order(order),
-                    None  => {
-                        let mut limit = Limit::new(price);
-                        limit.add_order(order);
-                        self.bids.insert(price, limit);
-                    }
-                
-                }   
-
-            }
-            OrderType::Ask => {
-
-            }
-        }
-    }
-}
-
-#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
-struct Price {
-    integral: u64,
-    fractional: u64,
-    scalar: u64,
-}
-
-impl Price {
-    fn new(price: f64) -> Price {
-        let scalar = 100000;
-        let integral = price as u64;
-        let fractional = ((price % 1.0) * scalar as f64) as u64;
-        Price {
-            scalar: scalar,
-            integral: integral,
-            fractional: fractional,
-        }
-    }
-}
-
-#[derive(Debug)]
-struct Limit {
-    price: Price,
-    orders: Vec<Order>,
-}
-
-impl Limit {
-    fn new(price: Price) -> Limit {
-        Limit {
-            price: price,
-            orders: Vec::new(),
-        }
-    }
-    fn add_order(&mut self, order: Order) {
-        self.orders.push(order);
-    }
-}
-#[derive(Debug)]
-struct Order {
-    size: f64,
-    order_type: OrderType,
-}
-
-impl Order {
-    fn new(order_type: OrderType, size: f64) -> Order {
-        Order {
-            order_type: order_type,
-            size: size,
-        }
-    }
-}
 fn main() {
     println!("Hello, world!");
-    let buy_order = Order::new(OrderType::Bid, 55.5);
-    let sell_order = Order::new(OrderType::Ask, 45.5);
+    
+    // Buy orders init
+    let buy_order_one = Order::new(OrderType::Bid, 55.5);
+    let buy_order_two = Order::new(OrderType::Bid, 69.5);
+    let buy_order_three = Order::new(OrderType::Bid, 62.5);
+
+    // Sell orders init
+    let sell_order_one = Order::new(OrderType::Ask, 45.5);
+    let sell_order_two = Order::new(OrderType::Ask, 75.5);
+
+    let mut orderbook = Orderbook::new();
+    // orderbook.add_order(4.4, buy_order_one);
+    orderbook.add_order(4.4, buy_order_two);
+
+    orderbook.add_order(25.5, sell_order_one);
+    orderbook.add_order(25.5, sell_order_two);
+
+    print!("{:?}\n", orderbook);
+
+    let mut engine = MatchingEngine::new();
+    let pair = TradingPair::new("BTC".to_string(), "USD".to_string());
+    let eth_pair = TradingPair::new("ETH".to_string(), "USD".to_string());
+    engine.add_new_market(pair.clone());
+
+    engine.place_limit_order(pair, 20.99, buy_order_one).unwrap();
+    engine.place_limit_order(eth_pair, 20.99, buy_order_three).unwrap()
+
 }
